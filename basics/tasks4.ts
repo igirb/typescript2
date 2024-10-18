@@ -8,7 +8,7 @@
 
 // TODO: Remove unknown and use the proper function type expression,
 //  to fulfill the usage of the handler function. 
-type ClickHandler = unknown;
+type ClickHandler = (id: number) => void;
 
 function onListingTileClick(handler: ClickHandler) {
     const productId = 5
@@ -21,7 +21,7 @@ interface Options {
     headers: {name: string, value: string}[],
     attempts: number,
 }
-function getEndpoint(url: string, fetcher: /* add an inline function type expression here */) {
+function getEndpoint(url: string, fetcher: (url: string, options: Options) => Promise<any>) {
     const options: Options = {
         headers: [{name: 'contentType', value: 'application/json'}],
         attempts: 3
@@ -33,7 +33,7 @@ function getEndpoint(url: string, fetcher: /* add an inline function type expres
 
 // TODO: fix the type of the tax arg to
 //  conform the latter usage.
-const calculateTax = (price: number, tax: number): number => {
+const calculateTax = (price: number, tax?: number): number => {
     const appliedTax = tax === undefined ? 100 : tax
     return price * (appliedTax/100)
 }
@@ -44,7 +44,10 @@ const price2 = calculateTax(245)
 //  operator. Short, readable and handy solution for handling
 //  optional arguments.
 // rewrite calculateTax function to use nullish coalescing operator (??)
-const calculateTaxWithDoubleQuestionMark = () => {}
+const calculateTaxWithNullish = (price: number, tax?: number): number => {
+    const appliedTax = tax ?? 100; // Ha tax undefined vagy null, 100-at használ
+    return price * (appliedTax / 100);
+};
 
 // Exercise 3) void, never, unknown
 // 
@@ -121,20 +124,20 @@ const clickHandler = (productId: number, onError: (message: string) => void, onS
 // Exercise 4), Rest parameters, rest arguments
 
 // TODO: correct the rest parameter type, to be valid for the input.
-const applyTaxes = (tax: number, ...prices: number) => prices.map(price => price * (1 + tax))
+const applyTaxes = (tax: number, ...prices: number[]) => prices.map(price => price * (1 + tax))
 const inputPrices = [100, 200, 300, 500]
 const taxed = applyTaxes(0.21, ...inputPrices)
 
 // TODO: correct the "input" variable's type to be valid for this function.
 const applyTax = (tax: number, price: number) => price * (1 + tax)
-const inputs = [.25, 200]
+const inputs: [number2: number, number1: number] = [.25, 200]
 const taxedSingle = applyTax(...inputs)
 
 // Exercise 5), Parameter Destructuring
 
 // TODO: add an inline type annotation for the destructured object
 type MessageType = 'success' | 'error'
-const renderMessage = ({message, messageType}) => {
+const renderMessage = ({message, messageType}: {message: string, messageType: MessageType}) => {
     let color;
     if (messageType === 'error') {
         color = 'red'
