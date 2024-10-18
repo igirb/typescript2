@@ -42,7 +42,7 @@ const cart: Cart = {
 // Correct its implementation with a corresponding type guards to 
 // work properly with a single number too.
 const getTotal = (prices: number | number[]): number => {
-    if (/* add type guard here */ ) {
+    if (typeof prices === "object") {
         const total = prices.reduce((sum, price) => sum + price, 0)
         return Math.round(total)
     } else {
@@ -78,7 +78,7 @@ const accounts: Array<DomainAccount | PathAccount> = [
 // TODO: Make it possible to handle the getUrl both the DomainAccount and a
 //  Path account types.
 const getUrl = (account: DomainAccount | PathAccount, subPath: string): string => {
-    if (/* add type guard here */) {
+    if ("path" in account) {
         return `${account.path}/${subPath}`
     } else {
         return `${account.domain}/${subPath}`
@@ -97,7 +97,7 @@ interface Listing {
 // TODO: make it possible to handle both the string and number
 //  type of price.
 const getListingTotal = (listing: Listing): number => {
-    if (/* add type guard here */) {
+    if (typeof listing["price"] === "number") {
         return listing.price * listing.quantity
     } else {
         return parseFloat(listing.price) * listing.quantity
@@ -119,7 +119,7 @@ class AccessDenied extends Error { };
 // TODO: Make it possible to handle different Error objects
 //  correctly hence their properties are different.
 const getErrorMessage = (error: InvalidAccountId | AccessDenied) => {
-    if (/* */) {
+    if (error instanceof InvalidAccountId) {
         return `Your account ID (${error.id}) is invalid.`
     } else {
         return 'You do not have access to this account.'
@@ -140,8 +140,8 @@ interface Program {
 // TODO: In this example we can distinguish Courses from Programs
 //  by the existence of the sequential prop. Fill this custom Type predicate
 //  to fulfill the latter usage below.
-const isProduct = (product: Course | Program): /* add proper type here */ => {
-    /* add the implementation of the type here */
+const isProduct = (product: Course | Program): product is Program => {
+    return (product as Program).sequential !== undefined;
 }
 
 const describeProduct = (product: Product) => {
@@ -181,13 +181,14 @@ type SpecificPromotion = ListingSpecificPromotion | UserSpecificPromotion | Acco
 //  needed, if the return type is explicit. Correct the function body, to handle
 //  the account case.
 //  What is the type of the promotion.scope? (to recap a previous topic)
-const getPromotionMessage = (promotion: SpecificPromotion) /* add an explicit return type here  */ => {
+const getPromotionMessage = (promotion: SpecificPromotion): string => {
     switch(promotion.scope) {
         case 'user': 
             return `Here is your personal discount for you. Only valid with User ID: ${promotion.userId}` 
         case 'listing':
             return `This listing has a discount. Only valid with this listing ID: ${promotion.listingId}`
-        /* TODO */
+        case 'account':
+            return `This account has a discount. Only valid with this account ID: ${promotion.accountId}`
     }
 }
 
@@ -203,11 +204,13 @@ const getPromotionMessage = (promotion: SpecificPromotion) /* add an explicit re
 //  to conform the requirements.
 
 interface FlatPromotion {
+    type: "flat",
     amount: number, // the amount should be subtracted from the listing price
     listingPrice: number | 'free'
 }
 
 interface PercentagePromotion {
+    type: "percentage",
     amount: number, // the percentage of the amount of the listing price must be subtracted from the listing price
     listingPrice: number | 'free'
 }
@@ -215,5 +218,16 @@ interface PercentagePromotion {
 type Promotion = FlatPromotion | PercentagePromotion
 
 const calculateDiscount = (promotion: Promotion): number => {
-    return promotion.listingPrice - promotion.amount
+    if (promotion.listingPrice === "free") {
+        return 0.0;
+    }
+
+    switch(promotion.type) {
+        case 'flat':
+            return promotion.listingPrice - promotion.amount;
+        case 'percentage':
+            return promotion.listingPrice - (promotion.listingPrice * (promotion.amount / 100));
+    }
 }
+
+export{}

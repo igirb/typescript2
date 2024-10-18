@@ -1,10 +1,9 @@
 // @strict
-// You can find help here: https://www.typescriptlang.org/docs/handbook/2/objects.html
 
 // Exercise 1)
 // Optional Properties
 
-// TODO: Unfortunately someone extended our common
+// TODO: Unforutnately someone extended our common
 //  Product interface with isPaid property hence the
 //  the isFree has been already there. Some API endpoints
 //  return isFree, some isPaid. But this interface incorrectly
@@ -15,8 +14,8 @@ interface Product {
     type: "Program" | "Course",
     title: string,
     price: number,
-    isPaid: boolean,
-    isFree: boolean,
+    isPaid?: boolean,
+    isFree?: boolean,
 }
 
 const productForDetailsPage: Product = {
@@ -37,28 +36,46 @@ const productForCheckoutPage: Product = {
 // free status correctly.
 // What if, we do net set the function's return type
 // explicitly just let the Typescript to infer it?
-//  Typescript is not a "Godmode", it is still possible
+//  Typesciprt is not a "Godmode", it is still possible
 //  to make runtime failures. 
-const isProductFree = (product: Product): boolean => {
+const isProductFree = (product: Product) => {
     return product.isFree
 }
+
+console.log(isProductFree(productForCheckoutPage));
+
 
 // Exercise 2)
 // Readonly Properties, Readonly Arrays
 
-interface Cart2 {
-    readonly products: Product[]
+interface Cart {
+    products: ReadonlyArray<Product>; // Readonly array of products
 }
 
-// TODO: Modify the Cart interface to make it possible
-// to empty the cart.
-const emptyCart = (cart: Cart2) => cart.products = []
+const fullCart: Cart = {
+    products: [productForCheckoutPage, productForDetailsPage]
+} 
 
-// TODO: Modify the Cart interface to disallow pushing 
-//  a new Item to the cart's products.
-// TODO: Modify the function's body below (addProductToCart), to allow
-//  add a new product, but the array, remains readonly.
-const addProductToCart = (product: Product, cart: Cart2) => cart.products.push(product)
+// Modify the emptyCart function to allow clearing the cart
+// by replacing the `products` array with an empty array.
+const emptyCart = (cart: Cart): Cart => {
+    return { ...cart, products: [] }; // Return a new cart with an empty products array
+};
+
+/* function emptyMyCart<Type>(name: string, product: string, something: Type) {
+    return name.concat(" " + product + something);
+}
+
+console.log(emptyMyCart<number>("Julia", "milk", 4)); */
+
+// Modify the addProductToCart function to return a new cart with the new product
+// while keeping the original `products` array readonly.
+const addProductToCart = (product: Product, cart: Cart): Cart => {
+    return { ...cart, products: [...cart.products, product] }; // Return a new cart with the new product added
+};
+
+console.log(addProductToCart(productForCheckoutPage, fullCart));
+
 
 // Exercise 3)
 // Index Signatures
@@ -67,7 +84,7 @@ const addProductToCart = (product: Product, cart: Cart2) => cart.products.push(p
 // support mapping of the product's titles to
 // its prices.
 interface CartItems {
-
+    [title: string]: number
 }
 
 const mapProductsToPrices = (cart: Cart) => {
@@ -76,40 +93,44 @@ const mapProductsToPrices = (cart: Cart) => {
     return mapped
 }
 
-// Exercise 4)
+console.log(mapProductsToPrices(fullCart));
+
+
+// Exercies 4)
 // Index Signatures
 
 interface FeatureFlags {
+    [feature: string]: boolean
     shoppingCart: boolean,
     bulkPurchase: boolean,
-    blockedEmailList: string[]
+    blockedEmailList: boolean
 }
 
 // TODO: Generalize the FeatureFlags interface to allow adding
 // any kind of feature flag. What kind of trouble we got?
 // TODO: We decided to create a separate API endpoint to get the
 //  the blocked emails, in this interface we just enable the feature.
-//  Modify the FeatureFlags interface and the function signature to
+//  Modify the FeatureFlags intrface and the function signature to
 //  correct the type errors.
-const addFeatureFlag = (featureFlags: FeatureFlags, feature: string, flag: boolean | string[]) => {
+const addFeatureFlag = (featureFlags: FeatureFlags, feature: string, flag: boolean) => {
     featureFlags[feature] = flag
 }
 
 // Exercise 4)
-// Extending Interfaces
+// Extending Inerfaces
 
-interface Account2 {
+interface Account {
     id: number,
     name: string,
 }
 
-interface PathAccount2 {
+interface PathAccount extends Account {
     path: string
 }
 
 // TODO: correct the PathAccount interface, using the already
 //  existing Account's interface to make this function type error free.
-const renderPathAccount = (account: PathAccount2) => {
+const renderPathAccount = (account: PathAccount) => {
     return `<a href="${account.path}">${account.name}</a>`
 }
 
@@ -126,7 +147,7 @@ type DomainAccount = {
 
 // TODO: correct the DomainSubaccount type to make the function
 //   type error free.
-type DomainSubaccount = DomainAccount
+type DomainSubaccount = DomainAccount & SubAccount;
 const renderDomainSubAccount = (account: DomainSubaccount) => {
     return `<span>${account.domain}: <a href="/accounts/${account.rootId}">Go To Root Account</a></span>`
 }
@@ -141,7 +162,7 @@ const renderDomainSubAccount = (account: DomainSubaccount) => {
 // Tuples
 
 // TODO: complete the type to conform the function declaration.
-const calculateTax = ([price, tax]: /* add type declaration here */) => price * (tax / 100)
+const calculateTax = ([price, tax]: [number, number]) => price * (tax / 100)
 
 // Exercise 7) 
 // Tuples
@@ -149,24 +170,26 @@ const calculateTax = ([price, tax]: /* add type declaration here */) => price * 
 // TODO: Define the Discount and CartData Tuple types based on the usage
 //  example and the function body below. 
 type DiscountType = 'flat' | 'percent'
-type Discount = unknown
-type CartData = unknown
+type Discount = [DiscountType, number]
+type CartData = [number, ...Discount[]]
 
 // TODO: Define the return type of the function.
-const calculateTotalAndDiscount = (cartData: CartData): unknown => {
+const calculateTotalAndDiscount = (cartData: CartData): [total: number, discount: number] => {
     const [itemPrice, ...discounts] = cartData
     const discount = discounts.reduce((sum, discountData) => {
         const [discountType, amount] = discountData;
         let itemDiscount;
         if (discountType === 'flat') {
-            itemDiscount === Math.max(itemPrice - amount, 0)
+            itemDiscount = Math.max(amount, 0)
         } else {
-            itemDiscount === Math.max(itemPrice - (itemPrice * amount / 100), 0)
+            itemDiscount = Math.max(itemPrice * amount / 100, 0)
         }
-        return sum + itemPrice
+        return sum + itemDiscount
     }, 0)
-    const total = itemPrice - discount
+    const total = Math.max(itemPrice - discount, 0);
     return [total, discount]
 }
 const cart: CartData = [1000, ['flat', 10], ['percent', 20], ['flat', 100]]
 const [total, discount] = calculateTotalAndDiscount(cart)
+
+console.log(calculateTotalAndDiscount(cart));
